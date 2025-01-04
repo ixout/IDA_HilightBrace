@@ -1,4 +1,4 @@
-# ida_toys
+# IDA_HilightBrace
 a simple plugin for ida
 
 The native highlight will disappear after the window is moved, so this is a plugin to persist the highlight matching {}
