@@ -3,7 +3,10 @@
 
 ssize_t idaapi MyHexraysCallback(void* ud, hexrays_event_t event, va_list va) {
   if (event == hxe_double_click) {
-    return HandleMatchingBrace(ud, event, va);
+    HandleMatchingBrace(ud, event, va);
+  }
+  else if (event == hxe_func_printed) {
+    HandleComeBack(ud, event, va);
   }
   return 0;
 }

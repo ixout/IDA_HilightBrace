@@ -1,14 +1,20 @@
 #pragma once
 #include <ctime>
+#include <unordered_map>
+#include <vector>
 #include <ida.hpp>
 #include <idp.hpp>
 #include <loader.hpp>
 #include <hexrays.hpp>
 #include <kernwin.hpp>
-#include <unordered_map>
-#include <vector>
 
 ssize_t idaapi HandleMatchingBrace(void* ud, hexrays_event_t event, va_list va);
+ssize_t idaapi HandleComeBack(void* ud, hexrays_event_t event, va_list va);
+
+struct MarkedLine {
+  unsigned up, down, color;
+  MarkedLine(unsigned u, unsigned d, unsigned c) : up(u), down(d), color(c) {}
+};
 
 class MatchingBrace {
 public:
@@ -20,25 +26,38 @@ public:
     return instance;
   }
 
-  bool IsExist(const ea_t key, const int n) {
+  bool IsFuncNeedScan(const ea_t key) {
+    auto& vec = matched_[key];
+    if (vec.empty()) {
+      return false;
+    }
+    return true;
+  }
+
+  std::vector<MarkedLine>& GetHilghtLines(const ea_t key) {
+    return matched_[key];
+  }
+
+  bool IsLineExist(const ea_t key, const int n) {
     auto& vec = matched_[key];
     for (auto& it : vec) {
-      if (n == it.first || n == it.second) {
+      if (n == it.up || n == it.down) {
         return true;
       }
     }
     return false;
   }
-  void AddMatched(const ea_t key, const int pre, const int back) {
+  void AddMatched(const ea_t key, const unsigned pre, const unsigned back, const unsigned color) {
     auto& vec = matched_[key];
-    vec.emplace_back(pre, back );
+    vec.emplace_back(pre, back, color);
   }
-  std::pair<int, int> DeleteMatched(const ea_t key, int n) {
-    std::pair<int, int> result;
+  std::pair<unsigned, unsigned> DeleteMatched(const ea_t key, int n) {
+    std::pair<unsigned, unsigned> result;
     auto& vec = matched_[key];
     for (auto it = vec.begin(); it != vec.end();) {
-      if (n == it->first || n == it->second) {
-        result = *it;
+      if (n == it->up || n == it->down) {
+        result.first = it->up;
+        result.second = it->down;
         it = vec.erase(it);
         break;
       }
@@ -53,6 +72,6 @@ public:
   }
 private:
   MatchingBrace() = default;
-  std::unordered_map<ea_t, std::vector<std::pair<int, int>>> matched_;
+  std::unordered_map<ea_t, std::vector<MarkedLine>> matched_;
 };
 
